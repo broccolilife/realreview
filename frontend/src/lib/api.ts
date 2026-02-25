@@ -52,4 +52,13 @@ export const api = {
     form.append('file', file);
     return request('/verify/upload', { method: 'POST', body: form });
   },
+
+  // Credits
+  getCreditsBalance: () => request('/credits/balance'),
+  dailyLogin: () => request('/credits/daily-login', { method: 'POST' }),
+  unlockBuilding: (id: number) => request(`/credits/unlock-building/${id}`, { method: 'POST' }),
+  unlockNeighborhood: (lat: number, lng: number, radius: number = 0.5) =>
+    request(`/credits/unlock-neighborhood?lat=${lat}&lng=${lng}&radius=${radius}`, { method: 'POST' }),
+  unlockUnlimited: () => request('/credits/unlock-unlimited', { method: 'POST' }),
+  getLeaderboard: () => request('/credits/leaderboard'),
 };

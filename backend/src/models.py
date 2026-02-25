@@ -1,9 +1,9 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text, JSON, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Date, Text, JSON, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.sql import func
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, date
 
 from .config import settings
 
@@ -21,6 +21,12 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     is_verified = Column(Boolean, default=False)
     subscription_tier = Column(String, default="free")  # free | pro
+    review_credits = Column(Integer, default=0)
+    tier = Column(String, default="new_tenant")
+    reviews_count = Column(Integer, default=0)
+    login_streak = Column(Integer, default=0)
+    last_login_date = Column(Date, nullable=True)
+    unlimited_until = Column(DateTime, nullable=True)
     reviews = relationship("Review", back_populates="user")
     residencies = relationship("VerifiedResidency", back_populates="user")
 
@@ -96,6 +102,27 @@ class ReviewComment(Base):
     text = Column(Text, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
 
+class CreditTransaction(Base):
+    __tablename__ = "credit_transactions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    amount = Column(Integer, nullable=False)  # positive=earn, negative=spend
+    reason = Column(String, nullable=False)
+    reference_id = Column(String, nullable=True)  # review/comment/building id
+    created_at = Column(DateTime, server_default=func.now())
+
+class BuildingUnlock(Base):
+    __tablename__ = "building_unlocks"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    building_id = Column(Integer, ForeignKey("buildings.id"), nullable=True)
+    unlock_type = Column(String, nullable=False)  # building, neighborhood, unlimited
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
+    radius = Column(Float, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    expires_at = Column(DateTime, nullable=True)
+
 # ── Pydantic Schemas ──
 
 class UserCreate(BaseModel):
@@ -107,8 +134,38 @@ class UserOut(BaseModel):
     email: str
     is_verified: bool
     subscription_tier: str
+    review_credits: int = 0
+    tier: str = "new_tenant"
+    reviews_count: int = 0
+    login_streak: int = 0
     class Config:
         from_attributes = True
+
+class CreditTransactionOut(BaseModel):
+    id: int
+    amount: int
+    reason: str
+    reference_id: Optional[str] = None
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class CreditBalanceOut(BaseModel):
+    credits: int
+    tier: str
+    login_streak: int
+    reviews_count: int
+    transactions: List[CreditTransactionOut] = []
+    next_tier: Optional[str] = None
+    credits_to_next_tier: Optional[int] = None
+    reviews_to_next_tier: Optional[int] = None
+
+class LeaderboardEntry(BaseModel):
+    rank: int
+    username: str
+    credits: int
+    tier: str
+    reviews_count: int
 
 class Token(BaseModel):
     access_token: str

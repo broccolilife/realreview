@@ -3,7 +3,60 @@ export interface User {
   email: string;
   is_verified: boolean;
   subscription_tier: string;
+  review_credits: number;
+  tier: string;
+  reviews_count: number;
+  login_streak: number;
 }
+
+export interface CreditTransaction {
+  id: number;
+  amount: number;
+  reason: string;
+  reference_id?: string;
+  created_at: string;
+}
+
+export interface CreditBalance {
+  credits: number;
+  tier: string;
+  login_streak: number;
+  reviews_count: number;
+  transactions: CreditTransaction[];
+  next_tier?: string;
+  credits_to_next_tier?: number;
+  reviews_to_next_tier?: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  username: string;
+  credits: number;
+  tier: string;
+  reviews_count: number;
+}
+
+export interface AccessInfo {
+  access: boolean;
+  tier: string;
+  credits: number;
+  cost_to_unlock?: number;
+  reason: string;
+}
+
+export const TIER_BADGES: Record<string, string> = {
+  new_tenant: '🥉',
+  verified_renter: '🥈',
+  trusted_reviewer: '🥇',
+  community_pillar: '💎',
+};
+
+export const TIER_LABELS: Record<string, string> = {
+  new_tenant: 'New Tenant',
+  verified_renter: 'Verified Renter',
+  trusted_reviewer: 'Trusted Reviewer',
+  community_pillar: 'Community Pillar',
+};
 
 export type ServiceType = 'apartment' | 'restaurant' | 'hospital' | 'school' | 'workplace' | 'gym' | 'hotel';
 

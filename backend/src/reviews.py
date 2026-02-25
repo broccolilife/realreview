@@ -7,6 +7,7 @@ from .models import (
     CommentCreate, CommentOut, Building, VerifiedResidency, get_db,
 )
 from .auth import get_current_user
+from .credits import award_review_submitted, award_comment, check_like_bonuses
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -51,6 +52,9 @@ def create_review(
     # Always apartment for MVP
     building.service_type = "apartment"
     
+    # Award credits for review submission
+    award_review_submitted(db, user, review.id)
+    
     db.commit()
     db.refresh(review)
     return review
@@ -73,6 +77,10 @@ def like_review(
     else:
         db.add(ReviewLike(user_id=user.id, review_id=review_id))
         review.likes_count = (review.likes_count or 0) + 1
+        # Check like bonuses for review author
+        review_author = db.query(User).filter(User.id == review.user_id).first()
+        if review_author:
+            check_like_bonuses(db, review_author, review_id, review.likes_count)
     db.commit()
     return {"likes_count": review.likes_count}
 
@@ -91,6 +99,8 @@ def create_comment(
         raise HTTPException(status_code=404, detail="Review not found")
     comment = ReviewComment(user_id=user.id, review_id=review_id, text=data.text)
     db.add(comment)
+    db.flush()
+    award_comment(db, user, comment.id)
     db.commit()
     db.refresh(comment)
     return comment

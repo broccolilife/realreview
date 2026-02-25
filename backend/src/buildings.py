@@ -4,7 +4,7 @@ from typing import Optional
 
 from .models import Building, BuildingOut, Review, ReviewOut, User, get_db
 from .auth import get_current_user
-from .gate import has_full_access
+from .gate import has_full_access, check_access
 
 router = APIRouter(prefix="/buildings", tags=["buildings"])
 
@@ -42,17 +42,18 @@ def get_building(
     
     # Check gate access
     gated = True
+    access_info = None
     if token:
         try:
-            from .auth import get_current_user, oauth2_scheme
             from .models import SessionLocal
-            temp_db = SessionLocal()
             from jose import jwt
             from .config import settings
+            temp_db = SessionLocal()
             payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
             user = temp_db.query(User).filter(User.id == int(payload["sub"])).first()
             if user:
-                gated = not has_full_access(user, temp_db)
+                access_info = check_access(user, building_id, temp_db)
+                gated = not access_info["access"]
             temp_db.close()
         except Exception:
             pass
@@ -61,4 +62,5 @@ def get_building(
         "building": BuildingOut.model_validate(building),
         "reviews": [ReviewOut.model_validate(r) for r in reviews],
         "gated": gated,
+        "access_info": access_info,
     }

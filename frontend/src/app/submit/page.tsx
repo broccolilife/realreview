@@ -12,7 +12,7 @@ function SubmitInner() {
   const handleSubmit = async (data: any) => {
     try {
       await api.createReview(data);
-      alert('Review submitted! Thank you for helping fellow tenants.');
+      alert('🎉 Review submitted! +10 RC earned! Thank you for helping fellow tenants.');
       window.location.href = `/building/${buildingId}`;
     } catch (e: any) {
       alert(e.message || 'Failed to submit review');

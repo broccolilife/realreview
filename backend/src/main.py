@@ -7,6 +7,7 @@ from .reviews import router as reviews_router
 from .buildings import router as buildings_router
 from .verification import router as verification_router
 from .categories_router import router as categories_router
+from .credits import router as credits_router
 
 app = FastAPI(title="RealReview API", version="0.1.0")
 
@@ -23,6 +24,7 @@ app.include_router(reviews_router)
 app.include_router(buildings_router)
 app.include_router(verification_router)
 app.include_router(categories_router)
+app.include_router(credits_router)
 
 @app.on_event("startup")
 def startup():

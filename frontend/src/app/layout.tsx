@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '@/styles/globals.css';
+import CreditsBadge from '@/components/CreditsBadge';
 
 export const metadata: Metadata = {
   title: 'RealReview — Verified Apartment Reviews',
@@ -19,8 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <a href="/" className="text-xl font-bold">
             <span className="text-gold-500">Real</span>Review
           </a>
-          <div className="flex gap-3 text-sm">
+          <div className="flex items-center gap-3 text-sm">
+            <CreditsBadge />
             <a href="/submit" className="hover:text-gold-400">Submit</a>
+            <a href="/leaderboard" className="hover:text-gold-400">🏆</a>
             <a href="/verify" className="hover:text-gold-400">Verify</a>
             <a href="/auth" className="hover:text-gold-400">Login</a>
             <a href="/profile" className="hover:text-gold-400">Profile</a>

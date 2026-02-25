@@ -5,7 +5,7 @@ import ReviewCard from '@/components/ReviewCard';
 import CategoryRatings from '@/components/CategoryRatings';
 import GateModal from '@/components/GateModal';
 import RatingStars from '@/components/RatingStars';
-import { Building, Review, ServiceTypeData } from '@/lib/types';
+import { Building, Review, ServiceTypeData, AccessInfo } from '@/lib/types';
 import { api } from '@/lib/api';
 
 export default function BuildingPage() {
@@ -14,6 +14,7 @@ export default function BuildingPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [gated, setGated] = useState(true);
   const [showGate, setShowGate] = useState(false);
+  const [accessInfo, setAccessInfo] = useState<AccessInfo | null>(null);
   const [typeData, setTypeData] = useState<ServiceTypeData | null>(null);
 
   useEffect(() => {
@@ -21,6 +22,7 @@ export default function BuildingPage() {
       setBuilding(data.building);
       setReviews(data.reviews);
       setGated(data.gated);
+      setAccessInfo(data.access_info || null);
       api.getCategoriesForType('apartment').then(setTypeData).catch(() => {});
     }).catch(() => {});
   }, [id]);
@@ -115,7 +117,17 @@ export default function BuildingPage() {
         )}
       </div>
 
-      {showGate && <GateModal onClose={() => setShowGate(false)} />}
+      {showGate && (
+        <GateModal
+          onClose={() => setShowGate(false)}
+          buildingId={building.id}
+          accessInfo={accessInfo}
+          onUnlocked={() => {
+            setGated(false);
+            setShowGate(false);
+          }}
+        />
+      )}
     </div>
   );
 }
