@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.sql import func
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from .config import settings
@@ -48,6 +48,8 @@ class Building(Base):
     lng = Column(Float, nullable=False)
     avg_rating = Column(Float, default=0)
     review_count = Column(Integer, default=0)
+    service_type = Column(String, default="apartment")
+    category_averages = Column(JSON, default={})
     reviews = relationship("Review", back_populates="building")
 
 class Review(Base):
@@ -56,6 +58,9 @@ class Review(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     building_id = Column(Integer, ForeignKey("buildings.id"), nullable=False)
     overall_rating = Column(Integer, nullable=False)
+    service_type = Column(String, default="apartment")
+    category_ratings = Column(JSON, default={})
+    # Legacy fields kept for migration compat
     rating_management = Column(Integer)
     rating_maintenance = Column(Integer)
     rating_noise = Column(Integer)
@@ -67,6 +72,7 @@ class Review(Base):
     pros = Column(JSON, default=[])
     cons = Column(JSON, default=[])
     text = Column(Text)
+    optional_fields = Column(JSON, default={})
     rent_paid = Column(Integer)
     move_in_date = Column(String)
     move_out_date = Column(String)
@@ -111,6 +117,9 @@ class Token(BaseModel):
 class ReviewCreate(BaseModel):
     building_id: int
     overall_rating: int
+    service_type: str = "apartment"
+    category_ratings: Dict[str, int] = {}
+    # Legacy fields (optional, for backward compat)
     rating_management: Optional[int] = None
     rating_maintenance: Optional[int] = None
     rating_noise: Optional[int] = None
@@ -122,6 +131,7 @@ class ReviewCreate(BaseModel):
     pros: List[str] = []
     cons: List[str] = []
     text: Optional[str] = None
+    optional_fields: Dict[str, Any] = {}
     rent_paid: Optional[int] = None
     move_in_date: Optional[str] = None
     move_out_date: Optional[str] = None
@@ -132,21 +142,24 @@ class ReviewOut(BaseModel):
     user_id: int
     building_id: int
     overall_rating: int
-    rating_management: Optional[int]
-    rating_maintenance: Optional[int]
-    rating_noise: Optional[int]
-    rating_pests: Optional[int]
-    rating_safety: Optional[int]
-    rating_amenities: Optional[int]
-    rating_neighbors: Optional[int]
-    rating_value: Optional[int]
-    pros: List[str]
-    cons: List[str]
-    text: Optional[str]
-    rent_paid: Optional[int]
-    move_in_date: Optional[str]
-    move_out_date: Optional[str]
-    would_renew: Optional[bool]
+    service_type: Optional[str] = "apartment"
+    category_ratings: Optional[Dict[str, int]] = {}
+    rating_management: Optional[int] = None
+    rating_maintenance: Optional[int] = None
+    rating_noise: Optional[int] = None
+    rating_pests: Optional[int] = None
+    rating_safety: Optional[int] = None
+    rating_amenities: Optional[int] = None
+    rating_neighbors: Optional[int] = None
+    rating_value: Optional[int] = None
+    pros: List[str] = []
+    cons: List[str] = []
+    text: Optional[str] = None
+    optional_fields: Optional[Dict[str, Any]] = {}
+    rent_paid: Optional[int] = None
+    move_in_date: Optional[str] = None
+    move_out_date: Optional[str] = None
+    would_renew: Optional[bool] = None
     created_at: datetime
     likes_count: int
     class Config:
@@ -162,6 +175,8 @@ class BuildingOut(BaseModel):
     lng: float
     avg_rating: float
     review_count: int
+    service_type: Optional[str] = "apartment"
+    category_averages: Optional[Dict[str, float]] = {}
     class Config:
         from_attributes = True
 

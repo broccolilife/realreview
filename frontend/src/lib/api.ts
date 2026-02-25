@@ -44,6 +44,9 @@ export const api = {
   createComment: (id: number, text: string) =>
     request(`/reviews/${id}/comments`, { method: 'POST', body: JSON.stringify({ text }) }),
   
+  getCategories: () => request('/categories'),
+  getCategoriesForType: (serviceType: string) => request(`/categories/${serviceType}`),
+
   uploadDocument: (file: File) => {
     const form = new FormData();
     form.append('file', file);

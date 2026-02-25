@@ -28,13 +28,30 @@ def create_review(
     db.add(review)
     db.commit()
     
-    # Update building stats
+    # Update building stats + category averages
     stats = db.query(
         func.avg(Review.overall_rating),
         func.count(Review.id),
     ).filter(Review.building_id == building.id).first()
     building.avg_rating = round(float(stats[0] or 0), 2)
     building.review_count = int(stats[1] or 0)
+    
+    # Recompute category averages from all reviews with category_ratings
+    all_reviews = db.query(Review).filter(Review.building_id == building.id).all()
+    cat_sums: dict = {}
+    cat_counts: dict = {}
+    for rev in all_reviews:
+        cr = rev.category_ratings or {}
+        for cat, val in cr.items():
+            if isinstance(val, (int, float)) and val > 0:
+                cat_sums[cat] = cat_sums.get(cat, 0) + val
+                cat_counts[cat] = cat_counts.get(cat, 0) + 1
+    building.category_averages = {c: round(cat_sums[c] / cat_counts[c], 2) for c in cat_sums}
+    
+    # Set building service_type if not already set
+    if not building.service_type or building.service_type == "apartment":
+        building.service_type = data.service_type
+    
     db.commit()
     db.refresh(review)
     return review

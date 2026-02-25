@@ -23,7 +23,7 @@ function SubmitInner() {
     <div className="max-w-lg mx-auto p-4 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-navy-950">Write a Review</h1>
-        <p className="text-sm text-navy-500 mt-1">Share your honest experience to help other renters.</p>
+        <p className="text-sm text-navy-500 mt-1">Share your honest experience to help others.</p>
       </div>
 
       {buildingId ? (
