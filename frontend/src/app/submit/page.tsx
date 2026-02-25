@@ -12,7 +12,7 @@ function SubmitInner() {
   const handleSubmit = async (data: any) => {
     try {
       await api.createReview(data);
-      alert('Review submitted! Thank you for contributing.');
+      alert('Review submitted! Thank you for helping fellow tenants.');
       window.location.href = `/building/${buildingId}`;
     } catch (e: any) {
       alert(e.message || 'Failed to submit review');
@@ -22,19 +22,19 @@ function SubmitInner() {
   return (
     <div className="max-w-lg mx-auto p-4 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy-950">Write a Review</h1>
-        <p className="text-sm text-navy-500 mt-1">Share your honest experience to help others.</p>
+        <h1 className="text-2xl font-bold text-navy-950">Review Your Apartment</h1>
+        <p className="text-sm text-navy-500 mt-1">Share your honest experience to help other tenants.</p>
       </div>
 
       {buildingId ? (
         <ReviewForm buildingId={buildingId} onSubmit={handleSubmit} />
       ) : (
         <div className="text-center py-8">
-          <p className="text-navy-500">First, <a href="/verify" className="text-gold-600 underline">verify your address</a> to start reviewing.</p>
+          <p className="text-navy-500">First, <a href="/verify" className="text-gold-600 underline">verify your apartment</a> to start reviewing.</p>
         </div>
       )}
 
-      <PrivacyBadge message="Your review is anonymous. Only your ratings and text are shared." />
+      <PrivacyBadge message="Your review is anonymous. Your lease is deleted after verification." />
     </div>
   );
 }

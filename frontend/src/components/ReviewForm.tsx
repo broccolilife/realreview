@@ -1,20 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
 import RatingStars from './RatingStars';
-import { ServiceType, ServiceTypeData, SERVICE_TYPE_ICONS, SERVICE_TYPE_LABELS } from '@/lib/types';
+import { ServiceTypeData } from '@/lib/types';
 import { api } from '@/lib/api';
 
 interface Props {
   buildingId: number;
-  serviceType?: ServiceType;
+  serviceType?: string;
   onSubmit: (data: any) => Promise<void>;
 }
 
-const ALL_TYPES: ServiceType[] = ['apartment', 'restaurant', 'hospital', 'school', 'workplace', 'gym', 'hotel'];
-
-export default function ReviewForm({ buildingId, serviceType: initialType, onSubmit }: Props) {
-  const [step, setStep] = useState(initialType ? 2 : 1);
-  const [serviceType, setServiceType] = useState<ServiceType>(initialType || 'apartment');
+export default function ReviewForm({ buildingId, onSubmit }: Props) {
+  const [step, setStep] = useState(1);
   const [typeData, setTypeData] = useState<ServiceTypeData | null>(null);
   const [overall, setOverall] = useState(0);
   const [catRatings, setCatRatings] = useState<Record<string, number>>({});
@@ -23,11 +20,17 @@ export default function ReviewForm({ buildingId, serviceType: initialType, onSub
   const [text, setText] = useState('');
   const [optFields, setOptFields] = useState<Record<string, string>>({});
   const [yesNo, setYesNo] = useState<boolean | null>(null);
+  // Apartment-specific extras
+  const [floorNumber, setFloorNumber] = useState('');
+  const [unitSize, setUnitSize] = useState('');
+  const [leaseLength, setLeaseLength] = useState('');
+  const [rentIncreased, setRentIncreased] = useState<boolean | null>(null);
+  const [utilityCost, setUtilityCost] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    api.getCategoriesForType(serviceType).then(setTypeData).catch(() => {});
-  }, [serviceType]);
+    api.getCategoriesForType('apartment').then(setTypeData).catch(() => {});
+  }, []);
 
   const toggle = (arr: string[], setArr: (v: string[]) => void, tag: string) => {
     setArr(arr.includes(tag) ? arr.filter((t) => t !== tag) : [...arr, tag]);
@@ -41,15 +44,21 @@ export default function ReviewForm({ buildingId, serviceType: initialType, onSub
         optionalParsed[f.key] = f.type === 'number' ? parseInt(optFields[f.key]) : optFields[f.key];
       }
     });
+    // Include apartment extras
+    if (floorNumber) optionalParsed.floor_number = parseInt(floorNumber);
+    if (unitSize) optionalParsed.unit_size_sqft = parseInt(unitSize);
+    if (leaseLength) optionalParsed.lease_length = leaseLength;
+    if (rentIncreased !== null) optionalParsed.rent_increased = rentIncreased;
+    if (utilityCost) optionalParsed.utility_cost = parseInt(utilityCost);
+
     await onSubmit({
       building_id: buildingId,
       overall_rating: overall,
-      service_type: serviceType,
+      service_type: 'apartment',
       category_ratings: catRatings,
       pros, cons, text: text || null,
       optional_fields: optionalParsed,
       would_renew: yesNo,
-      // Legacy compat for apartment
       rent_paid: optionalParsed.rent_paid || null,
       move_in_date: optionalParsed.move_in_date || null,
       move_out_date: optionalParsed.move_out_date || null,
@@ -57,44 +66,18 @@ export default function ReviewForm({ buildingId, serviceType: initialType, onSub
     setSubmitting(false);
   };
 
-  const totalSteps = initialType ? 7 : 8;
-  const stepOffset = initialType ? 1 : 0;
+  const totalSteps = 8; // overall, categories, pros, cons, text, details, apartment extras, submit
 
-  // Build steps dynamically
   const renderStep = () => {
-    const effectiveStep = step - (initialType ? 0 : 0);
-
-    // Step 1: Service type selection (only if no initial type)
-    if (!initialType && step === 1) {
-      return (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">What are you reviewing?</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {ALL_TYPES.map((t) => (
-              <button key={t} type="button" onClick={() => setServiceType(t)}
-                className={`p-3 rounded-xl border text-left transition ${
-                  serviceType === t ? 'border-gold-500 bg-gold-50 ring-2 ring-gold-500' : 'border-navy-200 hover:border-gold-400'
-                }`}>
-                <span className="text-xl">{SERVICE_TYPE_ICONS[t]}</span>
-                <span className="ml-2 text-sm font-medium">{SERVICE_TYPE_LABELS[t]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    const s = initialType ? step : step - 1; // normalize to 1-7
-
-    if (s === 1) return (
+    if (step === 1) return (
       <div className="text-center space-y-4">
         <h3 className="text-lg font-semibold">Overall Rating</h3>
-        <p className="text-sm text-navy-500">{SERVICE_TYPE_ICONS[serviceType]} {SERVICE_TYPE_LABELS[serviceType]}</p>
+        <p className="text-sm text-navy-500">🏠 How was your apartment overall?</p>
         <RatingStars rating={overall} onRate={setOverall} size="lg" />
       </div>
     );
 
-    if (s === 2 && typeData) return (
+    if (step === 2 && typeData) return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Rate Each Category</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -108,7 +91,7 @@ export default function ReviewForm({ buildingId, serviceType: initialType, onSub
       </div>
     );
 
-    if (s === 3 && typeData) return (
+    if (step === 3 && typeData) return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">What&apos;s Good?</h3>
         <div className="flex flex-wrap gap-2">
@@ -122,7 +105,7 @@ export default function ReviewForm({ buildingId, serviceType: initialType, onSub
       </div>
     );
 
-    if (s === 4 && typeData) return (
+    if (step === 4 && typeData) return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">What Needs Improvement?</h3>
         <div className="flex flex-wrap gap-2">
@@ -136,44 +119,73 @@ export default function ReviewForm({ buildingId, serviceType: initialType, onSub
       </div>
     );
 
-    if (s === 5) return (
+    if (step === 5) return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Tell Your Story</h3>
         <textarea value={text} onChange={(e) => setText(e.target.value)}
-          placeholder="What was your experience?"
+          placeholder="What was your experience living here? How was the landlord? Any issues with the apartment?"
           className="w-full h-32 p-3 border border-navy-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-500" />
       </div>
     );
 
-    if (s === 6 && typeData) return (
+    if (step === 6 && typeData) return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Optional Details</h3>
+        <h3 className="text-lg font-semibold">Lease Details</h3>
         {typeData.optional_fields.map((f) => (
           <input key={f.key} type={f.type} placeholder={f.label}
             value={optFields[f.key] || ''}
             onChange={(e) => setOptFields({ ...optFields, [f.key]: e.target.value })}
             className="w-full p-3 border border-navy-200 rounded-xl text-sm" />
         ))}
-        {typeData.optional_fields.length === 0 && (
-          <p className="text-sm text-navy-400">No additional details needed for this type.</p>
-        )}
         <div className="flex gap-3 mt-3">
           <button type="button" onClick={() => setYesNo(true)}
             className={`flex-1 py-2 rounded-xl text-sm border ${yesNo === true ? 'bg-emerald-500 text-white' : 'border-navy-200'}`}>
-            {typeData.yes_no_question} ✅
+            Would renew lease ✅
           </button>
           <button type="button" onClick={() => setYesNo(false)}
             className={`flex-1 py-2 rounded-xl text-sm border ${yesNo === false ? 'bg-red-500 text-white' : 'border-navy-200'}`}>
-            No ❌
+            Would not renew ❌
           </button>
         </div>
       </div>
     );
 
-    if (s === 7) return (
+    if (step === 7) return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Apartment Details (Optional)</h3>
+        <p className="text-xs text-navy-500">Help future tenants understand the unit better.</p>
+        <input type="number" placeholder="Floor number"
+          value={floorNumber} onChange={(e) => setFloorNumber(e.target.value)}
+          className="w-full p-3 border border-navy-200 rounded-xl text-sm" />
+        <input type="number" placeholder="Unit size (sq ft)"
+          value={unitSize} onChange={(e) => setUnitSize(e.target.value)}
+          className="w-full p-3 border border-navy-200 rounded-xl text-sm" />
+        <input type="text" placeholder="Lease length (e.g., 12 months)"
+          value={leaseLength} onChange={(e) => setLeaseLength(e.target.value)}
+          className="w-full p-3 border border-navy-200 rounded-xl text-sm" />
+        <input type="number" placeholder="Average monthly utility cost ($)"
+          value={utilityCost} onChange={(e) => setUtilityCost(e.target.value)}
+          className="w-full p-3 border border-navy-200 rounded-xl text-sm" />
+        <div>
+          <label className="text-sm text-navy-700 block mb-2">Did rent increase at renewal?</label>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setRentIncreased(true)}
+              className={`flex-1 py-2 rounded-xl text-sm border ${rentIncreased === true ? 'bg-red-500 text-white' : 'border-navy-200'}`}>
+              Yes, it went up 📈
+            </button>
+            <button type="button" onClick={() => setRentIncreased(false)}
+              className={`flex-1 py-2 rounded-xl text-sm border ${rentIncreased === false ? 'bg-emerald-500 text-white' : 'border-navy-200'}`}>
+              No / Stayed the same
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (step === 8) return (
       <div className="text-center space-y-4">
         <h3 className="text-lg font-semibold">Ready to Submit?</h3>
-        <p className="text-sm text-navy-500">Your review helps others make better decisions.</p>
+        <p className="text-sm text-navy-500">Your review helps other tenants make better decisions.</p>
         <button onClick={handleSubmit} disabled={submitting || overall === 0}
           className="w-full bg-gold-500 text-navy-950 py-3 rounded-xl font-semibold hover:bg-gold-400 disabled:opacity-50 transition">
           {submitting ? 'Submitting...' : 'Submit Review'}

@@ -48,9 +48,8 @@ def create_review(
                 cat_counts[cat] = cat_counts.get(cat, 0) + 1
     building.category_averages = {c: round(cat_sums[c] / cat_counts[c], 2) for c in cat_sums}
     
-    # Set building service_type if not already set
-    if not building.service_type or building.service_type == "apartment":
-        building.service_type = data.service_type
+    # Always apartment for MVP
+    building.service_type = "apartment"
     
     db.commit()
     db.refresh(review)

@@ -5,7 +5,7 @@ import ReviewCard from '@/components/ReviewCard';
 import CategoryRatings from '@/components/CategoryRatings';
 import GateModal from '@/components/GateModal';
 import RatingStars from '@/components/RatingStars';
-import { Building, Review, ServiceTypeData, SERVICE_TYPE_ICONS, SERVICE_TYPE_LABELS } from '@/lib/types';
+import { Building, Review, ServiceTypeData } from '@/lib/types';
 import { api } from '@/lib/api';
 
 export default function BuildingPage() {
@@ -21,24 +21,35 @@ export default function BuildingPage() {
       setBuilding(data.building);
       setReviews(data.reviews);
       setGated(data.gated);
-      const st = data.building.service_type || 'apartment';
-      api.getCategoriesForType(st).then(setTypeData).catch(() => {});
+      api.getCategoriesForType('apartment').then(setTypeData).catch(() => {});
     }).catch(() => {});
   }, [id]);
 
   if (!building) return <div className="p-6 text-center">Loading...</div>;
 
-  const st = building.service_type || 'apartment';
   const avgCats = building.category_averages || {};
+
+  // Compute building summary stats from reviews
+  const rentsReported = reviews.filter((r) => r.rent_paid).map((r) => r.rent_paid!);
+  const avgRent = rentsReported.length > 0
+    ? Math.round(rentsReported.reduce((a, b) => a + b, 0) / rentsReported.length)
+    : null;
+  const renewalVotes = reviews.filter((r) => r.would_renew !== null && r.would_renew !== undefined);
+  const renewalRate = renewalVotes.length > 0
+    ? Math.round((renewalVotes.filter((r) => r.would_renew).length / renewalVotes.length) * 100)
+    : null;
+  const rentIncreaseReports = reviews.filter((r) => r.optional_fields?.rent_increased === true).length;
+
+  // Most common complaints (top con tags)
+  const conCounts: Record<string, number> = {};
+  reviews.forEach((r) => (r.cons || []).forEach((c) => { conCounts[c] = (conCounts[c] || 0) + 1; }));
+  const topComplaints = Object.entries(conCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-2xl">{SERVICE_TYPE_ICONS[st]}</span>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-navy-100 text-navy-600">
-            {SERVICE_TYPE_LABELS[st]}
-          </span>
+          <span className="text-2xl">🏠</span>
         </div>
         <h1 className="text-2xl font-bold text-navy-950">{building.address}</h1>
         <p className="text-navy-500">{building.city}, {building.state} {building.zip}</p>
@@ -47,6 +58,38 @@ export default function BuildingPage() {
           <span className="text-sm text-navy-400">{building.avg_rating.toFixed(1)} ({building.review_count} reviews)</span>
         </div>
       </div>
+
+      {/* Building Summary Stats */}
+      {(avgRent || renewalRate !== null || topComplaints.length > 0) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {avgRent && (
+            <div className="bg-indigo-50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-indigo-700">${avgRent}</div>
+              <div className="text-xs text-indigo-500">Avg. Rent/mo</div>
+            </div>
+          )}
+          {renewalRate !== null && (
+            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-emerald-700">{renewalRate}%</div>
+              <div className="text-xs text-emerald-500">Would Renew</div>
+            </div>
+          )}
+          {rentIncreaseReports > 0 && (
+            <div className="bg-red-50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-red-700">{rentIncreaseReports}</div>
+              <div className="text-xs text-red-500">Rent Increase Reports</div>
+            </div>
+          )}
+          {topComplaints.length > 0 && (
+            <div className="bg-amber-50 rounded-xl p-3">
+              <div className="text-xs text-amber-600 font-medium mb-1">Top Complaints</div>
+              {topComplaints.map(([tag, count]) => (
+                <div key={tag} className="text-xs text-amber-800">{tag} ({count})</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-navy-50 rounded-xl p-4">
         <h2 className="font-semibold mb-3">Category Breakdown</h2>
@@ -68,7 +111,7 @@ export default function BuildingPage() {
           </div>
         ))}
         {reviews.length === 0 && (
-          <p className="text-center text-navy-400 py-8">No reviews yet. Be the first!</p>
+          <p className="text-center text-navy-400 py-8">No reviews yet. Be the first tenant to share your experience!</p>
         )}
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 import RatingStars from './RatingStars';
-import { Building, SERVICE_TYPE_ICONS, SERVICE_TYPE_LABELS } from '@/lib/types';
+import { Building } from '@/lib/types';
 
 interface Props {
   building: Building;
@@ -8,14 +8,13 @@ interface Props {
 }
 
 export default function BuildingCard({ building, onClick }: Props) {
-  const st = building.service_type || 'apartment';
   return (
     <div
       onClick={onClick}
       className="bg-white rounded-xl border border-navy-100 p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
     >
       <div className="flex items-center gap-2">
-        <span className="text-lg" title={SERVICE_TYPE_LABELS[st]}>{SERVICE_TYPE_ICONS[st]}</span>
+        <span className="text-lg">🏠</span>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-navy-950 text-sm truncate">{building.address}</h3>
           <p className="text-xs text-navy-500">{building.city}, {building.state} {building.zip}</p>

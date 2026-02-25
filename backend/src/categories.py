@@ -32,6 +32,11 @@ SERVICE_TYPES = {
             {"key": "rent_paid", "label": "Monthly rent ($)", "type": "number"},
             {"key": "move_in_date", "label": "Move-in date", "type": "text"},
             {"key": "move_out_date", "label": "Move-out date", "type": "text"},
+            {"key": "floor_number", "label": "Floor number", "type": "number"},
+            {"key": "unit_size_sqft", "label": "Unit size (sq ft)", "type": "number"},
+            {"key": "lease_length", "label": "Lease length (e.g., 12 months)", "type": "text"},
+            {"key": "rent_increased", "label": "Did rent increase at renewal?", "type": "boolean"},
+            {"key": "utility_cost", "label": "Average monthly utility cost ($)", "type": "number"},
         ],
     },
     "restaurant": {

@@ -11,7 +11,7 @@ export default function SearchBar({ onSearch }: Props) {
     <div className="relative w-full max-w-md">
       <input
         type="text"
-        placeholder="Search address, neighborhood, or city..."
+        placeholder="Search by address or neighborhood..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && onSearch(query)}

@@ -10,14 +10,14 @@ export default function GateModal({ onClose }: Props) {
       <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center">
         <h2 className="text-xl font-bold text-navy-950 mb-2">Unlock Full Reviews</h2>
         <p className="text-sm text-navy-600 mb-6">
-          To read detailed reviews, contribute to the community or subscribe.
+          Verify your apartment to read honest reviews from real tenants. Your lease is deleted after verification.
         </p>
         <div className="space-y-3">
           <a
             href="/verify"
             className="block w-full bg-navy-950 text-white py-3 rounded-xl font-medium hover:bg-navy-800 transition"
           >
-            ✅ Verify your address & review (free)
+            ✅ Verify your apartment & review (free)
           </a>
           <button className="w-full bg-gold-500 text-navy-950 py-3 rounded-xl font-medium hover:bg-gold-400 transition">
             💳 Subscribe for $4.99/mo
